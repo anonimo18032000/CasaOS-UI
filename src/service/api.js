@@ -14,6 +14,7 @@ import users from "./users.js";
 import local_storage from "./local_storage.js";
 import driver from './driver.js';
 import cloud from './cloud.js';
+import backup from './backup.js';
 
 export default {
 	// Apps
@@ -31,6 +32,7 @@ export default {
 	samba,
 	driver,
 	cloud,
+	backup,
 	// System
 	sys,
 	port,

@@ -74,6 +74,48 @@ const sys = {
 		return api.put(`/gateway/port`, data);
 	},
 
+	// get HTTPS status
+	getHttpsStatus() {
+		return api.get(`/gateway/https`);
+	},
+
+	// generate a self-signed certificate for a domain and enable HTTPS
+	generateHttpsCertificate(domain) {
+		return api.post(`/gateway/https/generate`, { domain });
+	},
+
+	// upload a certificate/key pair and enable HTTPS
+	uploadHttpsCertificate(formData) {
+		return api.post(`/gateway/https/upload`, formData, {
+			headers: { 'content-type': 'multipart/form-data' },
+		});
+	},
+
+	// disable HTTPS
+	disableHttps() {
+		return api.post(`/gateway/https/disable`);
+	},
+
+	// get auto-update setting for installed apps
+	getAutoUpdateSetting() {
+		return api.get(`/setting/auto-update`);
+	},
+
+	// enable/disable auto-update for installed apps
+	setAutoUpdateSetting(enabled) {
+		return api.put(`/setting/auto-update`, { enabled });
+	},
+
+	// get dashboard hardware stats refresh rate (ms)
+	getHardwareStatusInterval() {
+		return api.get(`/sys/hardware-status-interval`);
+	},
+
+	// set dashboard hardware stats refresh rate (ms)
+	setHardwareStatusInterval(intervalMs) {
+		return api.put(`/sys/hardware-status-interval`, { interval_ms: intervalMs });
+	},
+
 	// get usb status
 	getUsbStatus() {
 		return api.get(`/usb/usb-auto-mount`);

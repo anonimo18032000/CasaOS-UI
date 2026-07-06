@@ -2,6 +2,7 @@
 import AccountPanel from './account/AccountPanel.vue'
 import TerminalPanel from './logsAndTerminal/TerminalPanel.vue'
 import PortPanel from './settings/PortPanel.vue'
+import HttpsPanel from './settings/HttpsPanel.vue'
 import UpdateModal from './settings/UpdateModal.vue'
 import { mixin } from '@/mixins/mixin'
 import messages from '@/assets/lang'
@@ -49,6 +50,8 @@ export default {
 
       port: '',
       autoUsbMount: false,
+      autoUpdateEnabled: false,
+      hardwareStatusIntervalMs: 5000,
       deviceModel: '',
       // Language Sets
       languages: Object.entries(messages).map(([key, value]) => ({
@@ -145,6 +148,8 @@ export default {
     this.getUserInfo()
     this.getUsbStatus()
     this.getHardwareInfo()
+    this.getAutoUpdateSetting()
+    this.getHardwareStatusInterval()
   },
 
   methods: {
@@ -246,6 +251,24 @@ export default {
       this.$refs.settingsDrop.toggle()
     },
 
+    /**
+     * @description: Show HTTPS panel
+     * @return {*}
+     */
+    showHttpsPanel() {
+      this.$refs.settingsDrop.toggle()
+      this.$buefy.modal.open({
+        parent: this,
+        component: HttpsPanel,
+        hasModalCard: true,
+        customClass: 'account-modal',
+        trapFocus: true,
+        canCancel: ['escape'],
+        scroll: 'keep',
+        animation: 'zoom-in',
+      })
+    },
+
     /*************************************************
 		 * PART 1-4  Dashboard Setting - Auto USB Mount Switch
 		 **************************************************/
@@ -258,6 +281,51 @@ export default {
         if (res.data.success == 200) {
           this.autoUsbMount = res.data.data === 'True'
         }
+      })
+    },
+
+    /**
+     * @description: Get auto-update setting for installed apps
+     * @return {*}
+     */
+    getAutoUpdateSetting() {
+      this.$api.sys.getAutoUpdateSetting().then((res) => {
+        if (res.data.success == 200) {
+          this.autoUpdateEnabled = res.data.data.enabled
+        }
+      })
+    },
+
+    /**
+     * @description: Enable or Disable auto-update for installed apps
+     * @return {*}
+     */
+    saveAutoUpdateSetting() {
+      this.$api.sys.setAutoUpdateSetting(this.autoUpdateEnabled).catch(() => {
+        this.autoUpdateEnabled = !this.autoUpdateEnabled
+        this.$buefy.toast.open({ message: this.$t('Failed to save setting'), type: 'is-danger' })
+      })
+    },
+
+    /**
+     * @description: Get dashboard hardware stats refresh rate
+     * @return {*}
+     */
+    getHardwareStatusInterval() {
+      this.$api.sys.getHardwareStatusInterval().then((res) => {
+        if (res.data.success == 200) {
+          this.hardwareStatusIntervalMs = res.data.data.interval_ms
+        }
+      })
+    },
+
+    /**
+     * @description: Save dashboard hardware stats refresh rate
+     * @return {*}
+     */
+    saveHardwareStatusInterval() {
+      this.$api.sys.setHardwareStatusInterval(this.hardwareStatusIntervalMs).catch(() => {
+        this.$buefy.toast.open({ message: this.$t('Failed to save setting'), type: 'is-danger' })
       })
     },
 
@@ -615,6 +683,65 @@ export default {
             </div>
           </div>
           <!-- WebUI Port End -->
+
+          <!-- HTTPS Start -->
+          <div
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" icon="lock-outline" pack="casa" size="is-20" />
+              {{ $t("HTTPS") }}
+            </div>
+            <div class="ml-2">
+              <b-button rounded size="is-small" type="is-dark" @click="showHttpsPanel">
+                {{ $t("Configure") }}
+              </b-button>
+            </div>
+          </div>
+          <!-- HTTPS End -->
+
+          <!-- Auto Update Start -->
+          <div
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" icon="refresh-outline" pack="casa" size="is-20" />
+              {{ $t("Auto-update apps") }}
+            </div>
+            <div>
+              <b-field>
+                <b-switch
+                  v-model="autoUpdateEnabled"
+                  class="is-flex-direction-row-reverse mr-0 _small"
+                  type="is-dark"
+                  @input="saveAutoUpdateSetting"
+                />
+              </b-field>
+            </div>
+          </div>
+          <!-- Auto Update End -->
+
+          <!-- Refresh Rate Start -->
+          <div
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" icon="speed-outline" pack="casa" size="is-20" />
+              {{ $t("Dashboard refresh rate") }}
+            </div>
+            <div>
+              <b-field>
+                <b-select v-model="hardwareStatusIntervalMs" class="set-select" size="is-small" @input="saveHardwareStatusInterval">
+                  <option :value="250">250ms</option>
+                  <option :value="500">500ms</option>
+                  <option :value="1000">1s</option>
+                  <option :value="2000">2s</option>
+                  <option :value="5000">5s</option>
+                </b-select>
+              </b-field>
+            </div>
+          </div>
+          <!-- Refresh Rate End -->
 
           <!-- Background Start -->
           <div

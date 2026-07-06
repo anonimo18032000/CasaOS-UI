@@ -20,6 +20,31 @@ const cloud = {
 	// delete storage
 	umount(data) {
 		return api.delete(`${PREFIX}`, data);
-	}
+	},
+
+	// connect an SFTP server and mount it
+	addSftp(data) {
+		return api.post(`${PREFIX}/sftp`, data);
+	},
+
+	// test SFTP credentials without mounting anything
+	testSftp(data) {
+		return api.post(`${PREFIX}/sftp/test`, data);
+	},
+
+	// edit an existing SFTP connection (rename, change host/credentials/remote folder)
+	editSftp(data) {
+		return api.put(`${PREFIX}/sftp`, data);
+	},
+
+	// get health/latency status of all mounted network storages
+	health() {
+		return api.get(`${PREFIX}/health`);
+	},
+
+	// force-unmount and remount a storage
+	reconnect(data) {
+		return api.post(`${PREFIX}/reconnect`, data);
+	},
 }
 export default cloud;

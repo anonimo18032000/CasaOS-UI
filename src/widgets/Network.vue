@@ -196,8 +196,13 @@ export default {
 					this.networks[index][0].data.shift()
 				}
 				if (this.networks[index][0].cacheData > 0) {
-					const timeGap = this.networks[index][0].cacheTime == 0 ? 2 : el.time - this.networks[index][0].cacheTime
-					this.networks[index][0].data.push(this.covertToKB((el.bytesSent - this.networks[index][0].cacheData) / timeGap))
+					// el.time is milliseconds (see IOCountersStat.Time) - a whole-second timestamp would
+					// make timeGap read as 0 for two samples less than a second apart (e.g. at a 250ms/
+					// 500ms dashboard refresh rate), dividing by zero and showing "NaN undefined/s".
+					const timeGapMs = this.networks[index][0].cacheTime == 0 ? 2000 : el.time - this.networks[index][0].cacheTime
+					if (timeGapMs > 0) {
+						this.networks[index][0].data.push(this.covertToKB((el.bytesSent - this.networks[index][0].cacheData) * 1000 / timeGapMs))
+					}
 				}
 				this.networks[index][0].cacheData = el.bytesSent;
 				this.networks[index][0].cacheTime = el.time;
@@ -207,8 +212,10 @@ export default {
 					this.networks[index][1].data.shift()
 				}
 				if (this.networks[index][1].cacheData > 0) {
-					const timeGap = this.networks[index][1].cacheTime == 0 ? 2 : el.time - this.networks[index][1].cacheTime
-					this.networks[index][1].data.push(this.covertToKB((el.bytesRecv - this.networks[index][1].cacheData) / timeGap))
+					const timeGapMs = this.networks[index][1].cacheTime == 0 ? 2000 : el.time - this.networks[index][1].cacheTime
+					if (timeGapMs > 0) {
+						this.networks[index][1].data.push(this.covertToKB((el.bytesRecv - this.networks[index][1].cacheData) * 1000 / timeGapMs))
+					}
 				}
 				this.networks[index][1].cacheData = el.bytesRecv;
 				this.networks[index][1].cacheTime = el.time;

@@ -166,7 +166,7 @@ export default {
 				});
 			} catch (error) {
 				this.isLoading = false;
-				console.log(error.reponse.message);
+				console.log(error.response.message);
 			}
 
 			// Merger Storage
@@ -212,7 +212,7 @@ export default {
 				});
 			} catch (error) {
 				this.isLoading = false;
-				console.log(error.reponse.message);
+				console.log(error.response.message);
 			}
 		},
 		// Network Storage
@@ -233,7 +233,7 @@ export default {
 				});
 			} catch (error) {
 				this.isLoading = false;
-				console.log(error.reponse.message);
+				console.log(error.response.message);
 			}
 		},
 		// USB Storage
@@ -259,7 +259,7 @@ export default {
 				});
 			} catch (error) {
 				this.isLoading = false;
-				console.log(error.reponse.message);
+				console.log(error.response.message);
 			}
 		},
 		// Cloud Storage
@@ -280,7 +280,7 @@ export default {
 					};
 				});
 			} catch (error) {
-				console.log(error.reponse.message);
+				console.log(error.response.message);
 			}
 		},
 
@@ -418,7 +418,7 @@ export default {
 						});
 					})
 					.catch((error) => {
-						console.log(error.reponse.message);
+						console.log(error.response.message);
 					});
 			}, 500);
 		},

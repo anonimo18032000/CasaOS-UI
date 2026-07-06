@@ -43,6 +43,28 @@
 				</div>
 
 			</b-dropdown-item>
+			<b-dropdown-item aria-role="menuitem" @click="showNewSFTPStorage">
+				<div class="is-flex is-align-items-center">
+					<div class="img-container mr-1"></div>
+					{{ $t('Connect SFTP') }}
+				</div>
+
+			</b-dropdown-item>
+			<hr class="dropdown-divider">
+			<b-dropdown-item aria-role="menuitem" @click="showStorageHealth">
+				<div class="is-flex is-align-items-center">
+					<div class="img-container mr-1"></div>
+					{{ $t('Storage health') }}
+				</div>
+
+			</b-dropdown-item>
+			<b-dropdown-item aria-role="menuitem" @click="showBackupJobs">
+				<div class="is-flex is-align-items-center">
+					<div class="img-container mr-1"></div>
+					{{ $t('Scheduled backups') }}
+				</div>
+
+			</b-dropdown-item>
 		</b-dropdown>
 	</div>
 </template>
@@ -50,6 +72,9 @@
 <script>
 import StorageManagerPanel from '@/components/Storage/StorageManagerPanel.vue'
 import NewNetworkStorage   from '@/components/filebrowser/modals/NewNetworkStorage.vue'
+import NewSFTPStorage      from '@/components/filebrowser/modals/NewSFTPStorage.vue'
+import StorageHealthPanel  from '@/components/filebrowser/modals/StorageHealthPanel.vue'
+import BackupJobsPanel     from '@/components/filebrowser/modals/BackupJobsPanel.vue'
 
 export default {
 	data() {
@@ -117,6 +142,48 @@ export default {
 			this.$buefy.modal.open({
 				parent: this,
 				component: NewNetworkStorage,
+				hasModalCard: true,
+				customClass: 'network-storage-modal',
+				trapFocus: true,
+				canCancel: [],
+				scroll: "keep",
+				animation: "zoom-in",
+			})
+		},
+
+		// Show New SFTP Storage Panel
+		showNewSFTPStorage() {
+			this.$buefy.modal.open({
+				parent: this,
+				component: NewSFTPStorage,
+				hasModalCard: true,
+				customClass: 'network-storage-modal',
+				trapFocus: true,
+				canCancel: [],
+				scroll: "keep",
+				animation: "zoom-in",
+			})
+		},
+
+		// Show Storage Health Panel
+		showStorageHealth() {
+			this.$buefy.modal.open({
+				parent: this,
+				component: StorageHealthPanel,
+				hasModalCard: true,
+				customClass: 'network-storage-modal',
+				trapFocus: true,
+				canCancel: [],
+				scroll: "keep",
+				animation: "zoom-in",
+			})
+		},
+
+		// Show Backup Jobs Panel
+		showBackupJobs() {
+			this.$buefy.modal.open({
+				parent: this,
+				component: BackupJobsPanel,
 				hasModalCard: true,
 				customClass: 'network-storage-modal',
 				trapFocus: true,

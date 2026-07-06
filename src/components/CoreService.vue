@@ -506,6 +506,18 @@ export default {
       })
     },
     'app:install-end': function (res) {
+      let title = res.Properties['app:name']
+      try {
+        title = ice_i18n(JSON.parse(res.Properties['app:title']))
+      }
+      catch (e) {
+        // fall back to app:name when app:title is not provided
+      }
+      this.$buefy.toast.open({
+        message: this.$t('{title} has been installed successfully', { title }),
+        duration: 5000,
+        type: 'is-success',
+      })
       this.transformAppInstallationProgress({
         finished: true,
         // First name. Second app:name.The name from CheckThenUpdate.The app:name from install.
@@ -516,6 +528,11 @@ export default {
       })
     },
     'app:install-error': function (res) {
+      this.$buefy.toast.open({
+        message: res.Properties.message,
+        duration: 5000,
+        type: 'is-danger',
+      })
       this.transformAppInstallationProgress({
         // Display error messages
         finished: false,

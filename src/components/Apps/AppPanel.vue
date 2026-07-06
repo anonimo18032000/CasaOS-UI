@@ -735,6 +735,13 @@ export default {
               type: 'is-warning',
             })
           }
+          else {
+            this.$buefy.toast.open({
+              message: this.$t('Installation started for {appName}, you will be notified when it is ready', { appName }),
+              duration: 5000,
+              type: 'is-info',
+            })
+          }
         })
         .catch((e) => {
           if (e.response.status === 400) {
