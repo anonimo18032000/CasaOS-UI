@@ -474,7 +474,9 @@
   "Last run: {date}": "Last run: {date}",
   "Never run yet": "Never run yet",
   "Run now": "Run now",
+  "Backup started": "Backup started",
   "Backup completed": "Backup completed",
+  "Backup failed": "Backup failed",
   "Are you sure you want to delete this backup job?": "Are you sure you want to delete this backup job?",
   "Backup job deleted": "Backup job deleted",
   "Dashboard refresh rate": "Dashboard refresh rate"

@@ -70,10 +70,14 @@ export default {
 			isLoading: false,
 			jobs: [],
 			runningId: '',
+			pollTimer: null,
 		}
 	},
 	created() {
 		this.loadJobs()
+	},
+	beforeDestroy() {
+		clearTimeout(this.pollTimer)
 	},
 	methods: {
 		loadJobs() {
@@ -102,20 +106,55 @@ export default {
 		formatDate(iso) {
 			return new Date(iso).toLocaleString()
 		},
+		// The backend starts the copy in the background and responds right away - it doesn't wait
+		// for a (possibly hours-long) backup to finish. So a successful response here only means
+		// the job started, not that it's done; pollUntilFinished watches last_run to find out when
+		// it actually completes.
 		runNow(job) {
 			this.runningId = job.id
+			const lastRunBeforeStart = job.last_run
 			this.$api.backup.runNow(job.id).then(() => {
-				this.runningId = ''
-				this.$buefy.toast.open({ message: this.$t('Backup completed'), type: 'is-success' })
-				this.loadJobs()
+				this.$buefy.toast.open({ message: this.$t('Backup started'), type: 'is-info' })
+				this.pollUntilFinished(job.id, lastRunBeforeStart)
 			}).catch((err) => {
 				this.runningId = ''
 				this.$buefy.toast.open({
 					message: err.response?.data?.message || err.message,
 					type: 'is-danger',
 				})
-				this.loadJobs()
 			})
+		},
+		pollUntilFinished(id, lastRunBeforeStart, attemptsLeft = 200) {
+			clearTimeout(this.pollTimer)
+			this.pollTimer = setTimeout(() => {
+				this.$api.backup.list().then((res) => {
+					this.jobs = res.data.data || []
+					const job = this.jobs.find(j => j.id === id)
+
+					if (!job || job.last_run !== lastRunBeforeStart) {
+						this.runningId = ''
+						if (job) {
+							this.$buefy.toast.open({
+								message: job.last_status === 'error'
+									? (job.last_error || this.$t('Backup failed'))
+									: this.$t('Backup completed'),
+								type: job.last_status === 'error' ? 'is-danger' : 'is-success',
+							})
+						}
+						return
+					}
+
+					if (attemptsLeft <= 1) {
+						// Give up watching after ~10 minutes; the job is presumably still running -
+						// the status icon will simply show "in progress" until the next manual refresh.
+						this.runningId = ''
+						return
+					}
+					this.pollUntilFinished(id, lastRunBeforeStart, attemptsLeft - 1)
+				}).catch(() => {
+					this.runningId = ''
+				})
+			}, 3000)
 		},
 		deleteJob(job) {
 			this.$buefy.dialog.confirm({

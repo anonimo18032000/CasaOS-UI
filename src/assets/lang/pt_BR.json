@@ -474,7 +474,9 @@
   "Last run: {date}": "Última execução: {date}",
   "Never run yet": "Nunca executado",
   "Run now": "Executar agora",
+  "Backup started": "Backup iniciado",
   "Backup completed": "Backup concluído",
+  "Backup failed": "Falha no backup",
   "Are you sure you want to delete this backup job?": "Tem certeza que deseja excluir este backup agendado?",
   "Backup job deleted": "Backup agendado excluído",
   "Dashboard refresh rate": "Taxa de atualização do painel"
