@@ -4,65 +4,65 @@
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=IceWhaleTech_CasaOS-UI&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=IceWhaleTech_CasaOS-UI)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=IceWhaleTech_CasaOS-UI&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=IceWhaleTech_CasaOS-UI)
 
-# How to develop this project
+# Como desenvolver este projeto
 
-## Prerequisites
-1. Node 18 ([installation instructions](https://github.com/nvm-sh/nvm?tab=readme-ov-file#usage))
-2. pnpm@9.0.6 ([installation instructions](https://pnpm.io/installation))
+## Pré-requisitos
+1. Node 18 ([instruções de instalação](https://github.com/nvm-sh/nvm?tab=readme-ov-file#usage))
+2. pnpm@9.0.6 ([instruções de instalação](https://pnpm.io/installation))
 
-## Environment variables
-If you want to connect dev UI version to your local CasaOS server, you will need to set up a couple of env variables:
-1. Copy `.env.dev` to `.env.dev.local` (this file is git-ignored)
-2. Set `VUE_APP_DEV_IP` to IP address of your local CasaOS server
+## Variáveis de ambiente
+Se você quiser conectar a versão de desenvolvimento da UI ao seu servidor CasaOS local, será necessário configurar algumas variáveis de ambiente:
+1. Copie `.env.dev` para `.env.dev.local` (este arquivo está no .gitignore)
+2. Defina `VUE_APP_DEV_IP` com o endereço IP do seu servidor CasaOS local
 
-## Set up dev server
+## Configurar o servidor de desenvolvimento
 ```shell
-# install dependencies
+# instalar dependências
 pnpm install
 
 # build
 pnpm dev 
 ```
 
-# How to build this project
+# Como compilar este projeto
 
 ```shell
-# install dependencies
+# instalar dependências
 pnpm install
 
 # build
 pnpm build 
 ```
 
-# How to test this project
+# Como testar este projeto
 
 ```shell
 pnpm test
 ```
 
-# How to contribute to this project
+# Como contribuir com este projeto
 
-CasaOS is a community-driven open source project and the people involved are CasaOS users. That means CasaOS will always
-need contributions from community members just like you!
+O CasaOS é um projeto de código aberto impulsionado pela comunidade, e as pessoas envolvidas são usuários do CasaOS. Isso significa que o CasaOS sempre vai
+precisar de contribuições de membros da comunidade como você!
 
-- See <https://wiki.casaos.io/en/contribute> for ways of contribution to CasaOS
-- See <https://wiki.casaos.io/en/contribute/development> if you want to be involved in code contribution specificially
+- Veja <https://wiki.casaos.io/en/contribute> para formas de contribuir com o CasaOS
+- Veja <https://wiki.casaos.io/en/contribute/development> se você quiser se envolver especificamente com contribuições de código
 
 
-# How to contact this project
+# Como contatar este projeto
 
-The word Casa comes from the Spanish word for "home". Project CasaOS originated as a pre-installed system for
-crowdfunded product [ZimaBoard](https://www.zimaboard.com) on Kickstarter.
+A palavra Casa vem do espanhol e significa "lar". O projeto CasaOS surgiu como um sistema pré-instalado no produto financiado via crowdfunding
+[ZimaBoard](https://www.zimaboard.com) no Kickstarter.
 
-After looking at many systems and software on the market, the team found no server system designed for home scenarios,
-sadly true.
+Depois de analisar muitos sistemas e softwares no mercado, a equipe constatou, infelizmente, que não havia nenhum sistema de servidor projetado para
+cenários domésticos.
 
-So, we set out to build this open source project to develop CasaOS with our own hands, everyone in the community, and
-you.
+Por isso, decidimos construir este projeto de código aberto para desenvolver o CasaOS com nossas próprias mãos, todos na comunidade, e
+você.
 
-We believes that through community-driven collaborative innovation and open communication with global developers, we can
-reshape the digital home experience like never before.
+Acreditamos que, por meio da inovação colaborativa impulsionada pela comunidade e da comunicação aberta com desenvolvedores do mundo todo, podemos
+transformar a experiência doméstica digital como nunca antes.
 
-**A warm welcome for you to get help or share great ideas in the [Discord](https://discord.gg/knqAbbBbeX)!**
+**Você é muito bem-vindo para buscar ajuda ou compartilhar grandes ideias no [Discord](https://discord.gg/knqAbbBbeX)!**
 
 [![Discord Card](https://discordapp.com/api/guilds/884667213326463016/widget.png?style=banner2)](https://discord.gg/knqAbbBbeX)
