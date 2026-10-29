@@ -15,6 +15,7 @@ import local_storage from "./local_storage.js";
 import driver from './driver.js';
 import cloud from './cloud.js';
 import backup from './backup.js';
+import sharelinks from './sharelinks.js';
 
 export default {
 	// Apps
@@ -33,6 +34,7 @@ export default {
 	driver,
 	cloud,
 	backup,
+	sharelinks,
 	// System
 	sys,
 	port,

@@ -96,6 +96,27 @@
 										<operation-status-bar></operation-status-bar>
 										<!-- Operation Status End-->
 
+										<!-- Search / Disk usage / Share links Start -->
+										<b-tooltip :label="$t('Search files')" position="is-bottom" type="is-dark">
+											<p class="header-tool is-clickable none-line-height mr-3" role="button"
+												@click="showSearchModal">
+												<b-icon custom-size="mdi-18px" icon="magnify"></b-icon>
+											</p>
+										</b-tooltip>
+										<b-tooltip :label="$t('Disk usage')" position="is-bottom" type="is-dark">
+											<p class="header-tool is-clickable none-line-height mr-3" role="button"
+												@click="showDiskUsageModal">
+												<b-icon custom-size="mdi-18px" icon="chart-pie"></b-icon>
+											</p>
+										</b-tooltip>
+										<b-tooltip :label="$t('Share link')" position="is-bottom" type="is-dark">
+											<p class="header-tool is-clickable none-line-height mr-3" role="button"
+												@click="showShareLinkModal(null)">
+												<b-icon custom-size="mdi-18px" icon="link-variant"></b-icon>
+											</p>
+										</b-tooltip>
+										<!-- Search / Disk usage / Share links End -->
+
 										<!-- Upload Button Start -->
 										<global-action-button @showNewFileModal="showNewFileModal"
 											@showNewFolderModal="showNewFolderModal"></global-action-button>
@@ -178,7 +199,16 @@
 													<b-icon :icon="openUploadList ? 'down-outline' : 'up-outline'
 														" pack="casa" class="mr-2"></b-icon>
 													{{ $t(uploaderListHeaderText) }}
+													<span v-if="uploadSummary" class="is-size-7 has-text-grey ml-3">{{ uploadSummary }}</span>
 												</p>
+												<a v-if="uploadActive" :title="uploadsPaused ? $t('Resume all') : $t('Pause all')"
+													class="card-header-icon" @click.prevent.stop="toggleUploadPause">
+													<b-icon :icon="uploadsPaused ? 'play' : 'pause'" size="is-small"></b-icon>
+												</a>
+												<a v-if="uploadFinishedCount > 0" :title="$t('Clear finished')"
+													class="card-header-icon" @click.prevent.stop="clearFinishedUploads">
+													<b-icon icon="broom" size="is-small"></b-icon>
+												</a>
 												<a class="card-header-icon" @click.prevent="closeUploaderList">
 													<b-icon icon="close-outline" pack="casa"></b-icon>
 												</a>
@@ -251,6 +281,9 @@ import DetailModal from "./modals/DetailModal.vue";
 import NewFolderModal from "./modals/NewFolderModal.vue";
 import NewFileModal from "./modals/NewFileModal.vue";
 import RenameModal from "./modals/RenameModal.vue";
+import DiskUsageModal from "./modals/DiskUsageModal.vue";
+import FileSearchModal from "./modals/FileSearchModal.vue";
+import ShareLinkModal from "./modals/ShareLinkModal.vue";
 
 import Uploader from "./uploader/components/uploader.vue";
 import UploaderUnsupport from "./uploader/components/unsupport.vue";
@@ -341,6 +374,11 @@ export default {
 			showUploadList: false,
 			openUploadList: true,
 			uploaderListHeaderText: "Uploading",
+			uploadSummary: "",
+			uploadActive: false,
+			uploadsPaused: false,
+			uploadFinishedCount: 0,
+			uploadTimer: null,
 			usbDisks: [],
 			hasMergerFunction: false,
 		};
@@ -466,6 +504,8 @@ export default {
 		this.$EventBus.$on(events.HIDE_FILES_SIDEBAR, this.handleHideSideBar);
 	},
 	destroyed() {
+		clearInterval(this.uploadTimer);
+		window.removeEventListener("beforeunload", this.warnBeforeLeaving);
 		this.$EventBus.$off(events.SHOW_FILES_SIDEBAR, this.handleShowSideBar);
 		this.$EventBus.$off(events.HIDE_FILES_SIDEBAR, this.handleHideSideBar);
 		this.destroyedAction();
@@ -488,6 +528,15 @@ export default {
 						break;
 					case "Backspace":
 						this.backLevel();
+						break;
+					case "Space":
+						this.quickLook(e);
+						break;
+					case "ArrowRight":
+						this.previewNeighbor(1);
+						break;
+					case "ArrowLeft":
+						this.previewNeighbor(-1);
 						break;
 
 					default:
@@ -759,12 +808,78 @@ export default {
 				this.showUploadList = true;
 				this.openUploadList = true;
 				this.uploaderListHeaderText = "Uploading";
+				this.watchUploads();
 			});
 
 			this.uploaderInstance.on("complete", () => {
 				this.getFileList(this.currentPath);
 				this.uploaderListHeaderText = "Completed";
+				this.unwatchUploads();
 			});
+		},
+
+		/**
+		 * @description: Keep the upload header's summary (files, percent, speed) fresh while uploading,
+		 * and warn before the page is closed with uploads unfinished.
+		 */
+		watchUploads() {
+			window.addEventListener("beforeunload", this.warnBeforeLeaving);
+			clearInterval(this.uploadTimer);
+			this.refreshUploadSummary();
+			this.uploadTimer = setInterval(this.refreshUploadSummary, 700);
+		},
+
+		unwatchUploads() {
+			window.removeEventListener("beforeunload", this.warnBeforeLeaving);
+			clearInterval(this.uploadTimer);
+			this.uploadTimer = null;
+			this.refreshUploadSummary();
+		},
+
+		warnBeforeLeaving(e) {
+			if (this.uploadActive) {
+				e.preventDefault();
+				e.returnValue = "";
+			}
+		},
+
+		refreshUploadSummary() {
+			const up = this.uploaderInstance;
+			if (!up || !up.files) {
+				return;
+			}
+			const total = up.files.length;
+			const finished = up.files.filter((f) => f.isComplete()).length;
+			this.uploadFinishedCount = finished;
+			this.uploadActive = finished < total;
+			this.uploadsPaused = this.uploadActive && !up.isUploading();
+			if (total === 0) {
+				this.uploadSummary = "";
+				return;
+			}
+			const percent = Math.floor((up.progress() || 0) * 100);
+			const speed = up.files.reduce((sum, f) => sum + (f.currentSpeed || 0), 0);
+			const parts = [`${finished}/${total}`, `${percent}%`];
+			if (this.uploadActive && !this.uploadsPaused && speed > 0) {
+				parts.push(`${this.renderSize(speed)}/s`);
+			}
+			this.uploadSummary = parts.join(" · ");
+		},
+
+		toggleUploadPause() {
+			if (this.uploadsPaused) {
+				this.uploaderInstance.resume();
+			} else {
+				this.uploaderInstance.pause();
+			}
+			this.$nextTick(this.refreshUploadSummary);
+		},
+
+		clearFinishedUploads() {
+			this.uploaderInstance.files
+				.filter((f) => f.isComplete())
+				.forEach((f) => f.cancel());
+			this.refreshUploadSummary();
 		},
 
 		/**
@@ -772,8 +887,24 @@ export default {
 		 * @return {*}
 		 */
 		closeUploaderList() {
-			this.showUploadList = false;
-			this.uploaderInstance.cancel();
+			const close = () => {
+				this.showUploadList = false;
+				this.uploaderInstance.cancel();
+				this.unwatchUploads();
+			};
+			if (!this.uploadActive) {
+				close();
+				return;
+			}
+			// closing the list also cancels what is still uploading - make that a conscious choice
+			this.$buefy.dialog.confirm({
+				title: this.$t("Cancel uploads"),
+				message: this.$t("Uploads are still in progress. Cancel them?"),
+				confirmText: this.$t("Cancel uploads"),
+				cancelText: this.$t("Keep uploading"),
+				type: "is-danger",
+				onConfirm: close,
+			});
 		},
 
 		/**
@@ -884,6 +1015,83 @@ export default {
 		 * @param {Object} item
 		 * @return {*}
 		 */
+		/**
+		 * @description: Space on a selected file opens its preview (same as double click)
+		 */
+		quickLook(e) {
+			if (this.isShowDetial || this.isModalOpen || this.pageType !== "file") {
+				return;
+			}
+			// typing a space in a form field is not a shortcut
+			if (e.target && e.target.closest && e.target.closest("input, textarea, select, [contenteditable], .modal")) {
+				return;
+			}
+			if (this.selectedArray.length !== 1) {
+				return;
+			}
+			const item = this.selectedArray[0];
+			if (!item.is_dir && this.getPanelType(item) !== null) {
+				this.showDetailModal(item);
+			}
+		},
+
+		/**
+		 * @description: Left/Right arrows move the open preview to the previous/next previewable file.
+		 * Skipped for the image viewer (it has its own arrows) and the code editor (it holds edits).
+		 */
+		previewNeighbor(step) {
+			if (!this.isShowDetial || ["image-viewer", "code-editor"].includes(this.panelType)) {
+				return;
+			}
+			const items = this.listData.filter((i) => !i.is_dir && this.getPanelType(i) !== null);
+			const index = items.findIndex((i) => i.path === this.currentItem.path);
+			const target = items[index + step];
+			if (index < 0 || !target) {
+				return;
+			}
+			this.isShowDetial = false;
+			this.$nextTick(() => {
+				this.panelType = this.getPanelType(target);
+				this.currentItem = target;
+				this.isShowDetial = true;
+			});
+		},
+
+		showSearchModal() {
+			this.openToolModal(FileSearchModal, { path: this.currentPath || this.rootPath });
+		},
+
+		showDiskUsageModal() {
+			this.openToolModal(DiskUsageModal, { path: this.currentPath || this.rootPath });
+		},
+
+		/**
+		 * @param {Object|null} item file to create a link for; null just lists the existing links
+		 */
+		showShareLinkModal(item) {
+			this.openToolModal(ShareLinkModal, { item });
+		},
+
+		openToolModal(component, props) {
+			this.isModalOpen = true;
+			this.$buefy.modal.open({
+				parent: this,
+				component,
+				hasModalCard: true,
+				customClass: "network-storage-modal",
+				trapFocus: true,
+				canCancel: [],
+				scroll: "keep",
+				animation: "zoom-in",
+				props,
+				events: {
+					close: () => {
+						this.isModalOpen = false;
+					},
+				},
+			});
+		},
+
 		showRenameModal(item) {
 			this.isModalOpen = true;
 			this.$buefy.modal.open({

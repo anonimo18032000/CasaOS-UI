@@ -32,7 +32,7 @@ const hasThumbImageType = ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'svg']
 
 // eslint-disable-next-line no-unused-vars
 const filePanelMap = {
-	'code-editor': union(typeMap['text-x-generic'], typeMap['text-css'], typeMap['text-html'], typeMap['text-x-cmake'], typeMap['text-dockerfile']),
+	'code-editor': union(typeMap['text-x-generic'], typeMap['text-markdown'], typeMap['text-css'], typeMap['text-html'], typeMap['text-x-cmake'], typeMap['text-dockerfile']),
 	"video-player": union(typeMap['video-x-generic'], typeMap['audio-x-generic']),
 	"image-viewer": typeMap['image-x-generic'],
 	"doc-viewer": union(typeMap['application-vnd.ms-word']),

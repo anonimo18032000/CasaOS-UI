@@ -37,8 +37,12 @@
 						{{ job.last_run ? $t('Last run: {date}', { date: formatDate(job.last_run) }) : $t('Never run yet') }}
 					</div>
 					<div v-if="job.last_status === 'error'" class="is-size-7 has-text-danger">{{ job.last_error }}</div>
+					<div v-if="progress[job.id]" class="mt-2">
+						<b-progress :max="100" :value="percent(progress[job.id])" size="is-small" type="is-info" />
+						<div class="is-size-7 has-text-grey">{{ progressText(progress[job.id]) }}</div>
+					</div>
 				</div>
-				<b-button :loading="runningId === job.id" class="ml-2" rounded size="is-small" @click="runNow(job)">
+				<b-button :disabled="!!progress[job.id]" :loading="!!progress[job.id]" class="ml-2" rounded size="is-small" @click="runNow(job)">
 					{{ $t('Run now') }}
 				</b-button>
 				<b-button class="ml-2" rounded size="is-small" @click="editJob(job)">
@@ -63,13 +67,14 @@
 
 <script>
 import NewBackupJob from './NewBackupJob.vue'
+import { renderSize } from '@/mixins/file_utils'
 
 export default {
 	data() {
 		return {
 			isLoading: false,
 			jobs: [],
-			runningId: '',
+			progress: {}, // job id -> live progress, only for jobs that are running right now
 			pollTimer: null,
 		}
 	},
@@ -85,6 +90,7 @@ export default {
 			this.$api.backup.list().then((res) => {
 				this.isLoading = false
 				this.jobs = res.data.data || []
+				this.pollProgress()
 			}).catch(() => {
 				this.isLoading = false
 			})
@@ -106,55 +112,82 @@ export default {
 		formatDate(iso) {
 			return new Date(iso).toLocaleString()
 		},
-		// The backend starts the copy in the background and responds right away - it doesn't wait
-		// for a (possibly hours-long) backup to finish. So a successful response here only means
-		// the job started, not that it's done; pollUntilFinished watches last_run to find out when
-		// it actually completes.
+		// The backend starts the copy in the background and answers right away, so "started" is all
+		// a successful response means. pollProgress then follows the run until it ends; the toast
+		// with the result comes from the global backup notification (App.vue), not from here.
 		runNow(job) {
-			this.runningId = job.id
-			const lastRunBeforeStart = job.last_run
 			this.$api.backup.runNow(job.id).then(() => {
 				this.$buefy.toast.open({ message: this.$t('Backup started'), type: 'is-info' })
-				this.pollUntilFinished(job.id, lastRunBeforeStart)
+				this.$set(this.progress, job.id, { running: true })
+				this.pollProgress()
 			}).catch((err) => {
-				this.runningId = ''
 				this.$buefy.toast.open({
 					message: err.response?.data?.message || err.message,
 					type: 'is-danger',
 				})
 			})
 		},
-		pollUntilFinished(id, lastRunBeforeStart, attemptsLeft = 200) {
+		// Asks the backend how every job is doing; keeps going every 2s while at least one runs, and
+		// reloads the list when the last one finishes so the status icon and error text are fresh.
+		pollProgress() {
 			clearTimeout(this.pollTimer)
-			this.pollTimer = setTimeout(() => {
-				this.$api.backup.list().then((res) => {
-					this.jobs = res.data.data || []
-					const job = this.jobs.find(j => j.id === id)
-
-					if (!job || job.last_run !== lastRunBeforeStart) {
-						this.runningId = ''
-						if (job) {
-							this.$buefy.toast.open({
-								message: job.last_status === 'error'
-									? (job.last_error || this.$t('Backup failed'))
-									: this.$t('Backup completed'),
-								type: job.last_status === 'error' ? 'is-danger' : 'is-success',
-							})
+			const ids = this.jobs.map(j => j.id)
+			if (ids.length === 0) {
+				return
+			}
+			Promise.all(ids.map(id => this.$api.backup.progress(id).then(res => [id, res.data.data]).catch(() => [id, null])))
+				.then((results) => {
+					const next = {}
+					results.forEach(([id, p]) => {
+						if (p && p.running) {
+							next[id] = p
 						}
-						return
+					})
+					const wasRunning = Object.keys(this.progress).length > 0
+					this.progress = next
+					if (Object.keys(next).length > 0) {
+						this.pollTimer = setTimeout(() => this.pollProgress(), 2000)
 					}
-
-					if (attemptsLeft <= 1) {
-						// Give up watching after ~10 minutes; the job is presumably still running -
-						// the status icon will simply show "in progress" until the next manual refresh.
-						this.runningId = ''
-						return
+					else if (wasRunning) {
+						this.$api.backup.list().then((res) => {
+							this.jobs = res.data.data || []
+						})
 					}
-					this.pollUntilFinished(id, lastRunBeforeStart, attemptsLeft - 1)
-				}).catch(() => {
-					this.runningId = ''
 				})
-			}, 3000)
+		},
+		percent(p) {
+			const stats = p.stats
+			if (!stats || !stats.totalBytes) {
+				return 0
+			}
+			return Math.min(100, Math.round((stats.bytes / stats.totalBytes) * 100))
+		},
+		progressText(p) {
+			const stats = p.stats
+			if (!stats || (!stats.totalBytes && !stats.bytes)) {
+				return this.$t('Preparing...')
+			}
+			const parts = [`${renderSize(stats.bytes)} / ${renderSize(stats.totalBytes)} (${this.percent(p)}%)`]
+			if (stats.speed > 0) {
+				parts.push(`${renderSize(stats.speed)}/s`)
+			}
+			if (stats.eta) {
+				parts.push(`${this.$t('ETA')} ${this.formatEta(stats.eta)}`)
+			}
+			const current = stats.transferring && stats.transferring[0]
+			if (current) {
+				parts.push(current.name)
+			}
+			return parts.join(' · ')
+		},
+		formatEta(seconds) {
+			if (seconds < 60) {
+				return `${seconds}s`
+			}
+			if (seconds < 3600) {
+				return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+			}
+			return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
 		},
 		deleteJob(job) {
 			this.$buefy.dialog.confirm({

@@ -23,6 +23,11 @@ const backup = {
 		return api.delete(`${PREFIX}/${id}`)
 	},
 
+	// live progress of a running job
+	progress(id) {
+		return api.get(`${PREFIX}/${id}/progress`)
+	},
+
 	// run a backup job immediately, outside its schedule
 	runNow(id) {
 		return api.post(`${PREFIX}/${id}/run`)

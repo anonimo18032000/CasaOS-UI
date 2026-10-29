@@ -13,6 +13,8 @@ import VueSocialSharing from 'vue-social-sharing'
 import VueSocketIOExt from 'vue-socket.io-extended';
 import messageBus from '@/events/index.js'
 import VueDOMPurifyHTML from 'vue-dompurify-html'
+import { initTheme } from '@/plugins/theme'
+import { registerPwa } from '@/plugins/pwa'
 
 
 // Import Styles
@@ -57,6 +59,10 @@ Vue.prototype.$baseURL = baseURL;
 Vue.prototype.$protocol = protocol;
 Vue.prototype.$wsProtocol = wsProtocol;
 
+
+// theme first, so the first paint already has the right colours
+initTheme()
+registerPwa()
 
 // Create an EventBus
 Vue.prototype.$EventBus = new Vue();

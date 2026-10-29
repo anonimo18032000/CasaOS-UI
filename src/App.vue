@@ -123,6 +123,19 @@ _____             _____ _____
 		this["vh"] = `${vh}px`;
 	},
 	methods: {
+		async openBackupJobs() {
+			const { default: BackupJobsPanel } = await import('./components/filebrowser/modals/BackupJobsPanel.vue')
+			this.$buefy.modal.open({
+				parent: this,
+				component: BackupJobsPanel,
+				hasModalCard: true,
+				customClass: 'network-storage-modal',
+				trapFocus: true,
+				canCancel: [],
+				scroll: 'keep',
+				animation: 'zoom-in',
+			})
+		},
 		/**
 		 * @description: Get and Set default language
 		 * @return {*} void
@@ -146,6 +159,36 @@ _____             _____ _____
 			console.log('socket connected');
 		},
 
+		// A scheduled (or manual) backup finished. A failure must not go unnoticed just because the
+		// backup panel is closed, so it is shown wherever the user happens to be.
+		"casaos:backup:result"(res) {
+			if (!this.$store.state.access_token && !localStorage.getItem('access_token')) {
+				return // login screen: nobody to tell
+			}
+			const read = (key) => {
+				try {
+					return JSON.parse(res.Properties[key])
+				} catch (e) {
+					return res.Properties?.[key]
+				}
+			}
+			const name = read('name')
+			if (read('status') === 'error') {
+				this.$buefy.snackbar.open({
+					message: this.$t('Backup "{name}" failed: {error}', { name, error: read('error') }),
+					type: 'is-danger',
+					position: 'is-bottom-right',
+					duration: 20000,
+					actionText: this.$t('View backups'),
+					onAction: this.openBackupJobs,
+				})
+			} else {
+				this.$buefy.toast.open({
+					message: this.$t('Backup "{name}" completed', { name }),
+					type: 'is-success',
+				})
+			}
+		},
 	},
 }
 </script>

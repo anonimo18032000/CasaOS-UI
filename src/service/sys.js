@@ -1,4 +1,4 @@
-import { api } from "./service.js";
+import { api, instance } from "./service.js";
 
 const PREFIX = "/sys"
 
@@ -149,6 +149,18 @@ const sys = {
 	// Check ssh login
 	checkSshLogin(data) {
 		return api.post(`${PREFIX}/ssh-login`, data);
+	},
+
+	// download the settings backup (.tar.gz) as a Blob
+	exportConfig() {
+		return instance.get(`/v1${PREFIX}/config-backup`, { responseType: 'blob' });
+	},
+
+	// restore a settings backup made by exportConfig; file is a File/Blob
+	importConfig(file) {
+		const form = new FormData();
+		form.append('file', file);
+		return instance.post(`/v1${PREFIX}/config-backup`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
 	},
 
 	// power -- data:shutdown

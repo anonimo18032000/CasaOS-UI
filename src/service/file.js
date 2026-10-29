@@ -20,6 +20,11 @@ const file = {
 		});
 	},
 
+	// search below a folder (params: path, q, type, min_size, max_size, from, to, limit)
+	search(params) {
+		return api.get(`${PREFIX}/search`, params);
+	},
+
 	// create file
 	create(path) {
 		return api.post(`${PREFIX}`, {

@@ -42,6 +42,11 @@ const cloud = {
 		return api.get(`${PREFIX}/health`);
 	},
 
+	// latency/reachability samples recorded by the backend (params: minutes, mount_point)
+	healthHistory(params) {
+		return api.get(`${PREFIX}/health/history`, params);
+	},
+
 	// force-unmount and remount a storage
 	reconnect(data) {
 		return api.post(`${PREFIX}/reconnect`, data);

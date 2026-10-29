@@ -4,6 +4,9 @@ import TerminalPanel from './logsAndTerminal/TerminalPanel.vue'
 import PortPanel from './settings/PortPanel.vue'
 import HttpsPanel from './settings/HttpsPanel.vue'
 import UpdateModal from './settings/UpdateModal.vue'
+import ConfigBackupPanel from './settings/ConfigBackupPanel.vue'
+import { ACCENTS, getAccent, getTheme, setAccent, setTheme } from '@/plugins/theme'
+import { canInstall, isInstalled, onInstallAvailabilityChange, promptInstall } from '@/plugins/pwa'
 import { mixin } from '@/mixins/mixin'
 import messages from '@/assets/lang'
 
@@ -51,6 +54,13 @@ export default {
       port: '',
       autoUsbMount: false,
       autoUpdateEnabled: false,
+      // Appearance (kept in this browser only)
+      theme: getTheme(),
+      accent: getAccent(),
+      accents: ACCENTS,
+      // Install as an app
+      installable: canInstall(),
+      installed: isInstalled(),
       hardwareStatusIntervalMs: 5000,
       deviceModel: '',
       // Language Sets
@@ -143,7 +153,16 @@ export default {
     // this.getConfig();
     this.getPort()
   },
+  beforeDestroy() {
+    if (this.stopInstallWatch) {
+      this.stopInstallWatch()
+    }
+  },
   mounted() {
+    this.stopInstallWatch = onInstallAvailabilityChange((available) => {
+      this.installable = available
+      this.installed = isInstalled()
+    })
     this.checkVersion()
     this.getUserInfo()
     this.getUsbStatus()
@@ -249,6 +268,36 @@ export default {
     showChangeWallpaperModal() {
       this.$EventBus.$emit(events.SHOW_CHANGE_WALLPAPER_MODAL)
       this.$refs.settingsDrop.toggle()
+    },
+
+    changeTheme(mode) {
+      setTheme(mode)
+    },
+
+    changeAccent(color) {
+      this.accent = color
+      setAccent(color)
+    },
+
+    async installApp() {
+      const accepted = await promptInstall()
+      if (accepted) {
+        this.$buefy.toast.open({ message: this.$t('Installed'), type: 'is-success' })
+      }
+    },
+
+    showConfigBackupPanel() {
+      this.$refs.settingsDrop.toggle()
+      this.$buefy.modal.open({
+        parent: this,
+        component: ConfigBackupPanel,
+        hasModalCard: true,
+        customClass: 'account-modal',
+        trapFocus: true,
+        canCancel: ['escape'],
+        scroll: 'keep',
+        animation: 'zoom-in',
+      })
     },
 
     /**
@@ -699,6 +748,69 @@ export default {
             </div>
           </div>
           <!-- HTTPS End -->
+
+          <!-- Theme Start -->
+          <div
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" custom-size="mdi-18px" icon="palette-outline" />
+              {{ $t("Theme") }}
+            </div>
+            <div class="is-flex is-align-items-center">
+              <span
+                v-for="color in accents"
+                :key="color"
+                :class="{ 'is-selected': accent === color }"
+                :style="{ background: color }"
+                :title="color"
+                class="accent-swatch mr-1"
+                role="button"
+                @click="changeAccent(color)"
+              />
+              <b-field class="ml-2">
+                <b-select v-model="theme" class="set-select" size="is-small" @input="changeTheme">
+                  <option value="auto">{{ $t("Automatic") }}</option>
+                  <option value="light">{{ $t("Light") }}</option>
+                  <option value="dark">{{ $t("Dark") }}</option>
+                </b-select>
+              </b-field>
+            </div>
+          </div>
+          <!-- Theme End -->
+
+          <!-- Install App Start -->
+          <div
+            v-if="installable && !installed"
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" custom-size="mdi-18px" icon="cellphone-arrow-down" />
+              {{ $t("Install CasaOS as an app") }}
+            </div>
+            <div class="ml-2">
+              <b-button rounded size="is-small" type="is-dark" @click="installApp">
+                {{ $t("Install") }}
+              </b-button>
+            </div>
+          </div>
+          <!-- Install App End -->
+
+          <!-- Settings Backup Start -->
+          <div
+            class="is-flex is-align-items-center mb-1 _is-large _box hover-effect _is-radius pr-2 mr-4 ml-4"
+          >
+            <div class="is-flex is-align-items-center is-flex-grow-1 _is-normal">
+              <b-icon class="mr-1 ml-2" custom-size="mdi-18px" icon="backup-restore" />
+              {{ $t("Settings backup") }}
+            </div>
+            <div class="ml-2">
+              <b-button rounded size="is-small" type="is-dark" @click="showConfigBackupPanel">
+                {{ $t("Manage") }}
+              </b-button>
+            </div>
+          </div>
+          <!-- Settings Backup End -->
 
           <!-- Auto Update Start -->
           <div
@@ -1280,5 +1392,20 @@ export default {
 			}
 		}
 	}
+}
+
+.accent-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+
+  &.is-selected {
+    border-color: rgba(127, 127, 127, 0.9);
+    box-shadow: 0 0 0 1px #fff inset;
+  }
 }
 </style>

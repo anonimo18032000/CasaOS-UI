@@ -26,12 +26,40 @@
 			<b-field :label="$t('Remote folder')" class="mb-5" horizontal>
 				<b-input v-model="remotePath" :placeholder="$t('eg : / or /var')" expanded name="remotePath" />
 			</b-field>
-			<b-field :label="$t('Host key fingerprint')" class="mb-5" horizontal>
+			<b-field :label="$t('Host key fingerprint')" class="mb-3" horizontal>
 				<b-input v-model="hostKeyFingerprint" :placeholder="$t('SHA256:... (optional)')" expanded name="hostKeyFingerprint" />
 			</b-field>
-			<p v-if="presentedFingerprints.length" class="is-size-7 mb-5">
-				{{ $t('Server host keys') }}: {{ presentedFingerprints.join(', ') }}
-			</p>
+
+			<!-- The server presented a different key than the one pinned: a changed server, or someone in between -->
+			<div v-if="mismatchPresented.length" class="notification is-danger is-light mb-5">
+				<p class="has-text-weight-bold">{{ $t('The server identity does not match') }}</p>
+				<p class="is-size-7 mb-2">
+					{{ $t('Connecting could expose your password to someone else. Only continue if you know the server was reinstalled or its keys were changed.') }}
+				</p>
+				<p class="is-size-7">{{ $t('Expected') }}: <code class="fingerprint">{{ hostKeyFingerprint.trim() }}</code></p>
+				<div v-for="fp in mismatchPresented" :key="fp" class="is-flex is-align-items-center mt-2">
+					<span class="is-size-7 mr-2">{{ $t('Presented') }}:</span>
+					<code class="fingerprint is-flex-grow-1">{{ fp }}</code>
+					<b-button class="ml-2" rounded size="is-small" type="is-danger" @click="trustFingerprint(fp, true)">
+						{{ $t('Trust the new key') }}
+					</b-button>
+				</div>
+			</div>
+
+			<!-- First contact: show what the server presents so it can be compared and trusted explicitly -->
+			<div v-else-if="presentedFingerprints.length" class="notification is-light mb-5">
+				<p class="has-text-weight-bold">{{ $t('Server identity') }}</p>
+				<p class="is-size-7 mb-2">
+					{{ $t('Compare these fingerprints with the ones shown by the server (ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub), then trust one to pin it.') }}
+				</p>
+				<div v-for="item in presentedFingerprints" :key="item.value" class="is-flex is-align-items-center mt-2">
+					<code class="fingerprint is-flex-grow-1">{{ item.label }}</code>
+					<b-tag v-if="item.value === hostKeyFingerprint.trim()" class="ml-2" type="is-success">{{ $t('Trusted') }}</b-tag>
+					<b-button v-else class="ml-2" rounded size="is-small" @click="trustFingerprint(item.value, false)">
+						{{ $t('Trust') }}
+					</b-button>
+				</div>
+			</div>
 
 			<b-field>
 				<b-radio-button v-model="authMode" native-value="password" type="is-primary">
@@ -97,6 +125,7 @@ export default {
 			remotePath: this.editItem?.remote_path || '/',
 			hostKeyFingerprint: '',
 			presentedFingerprints: [],
+			mismatchPresented: [],
 			authMode: 'password',
 			password: '',
 			keyFile: null,
@@ -168,16 +197,52 @@ export default {
 				}
 				const res = await this.$api.cloud.testSftp(data)
 				this.isTesting = false
-				this.presentedFingerprints = res.data?.data?.host_key_fingerprints || []
+				this.presentedFingerprints = (res.data?.data?.host_key_fingerprints || []).map(label => ({
+					value: label.split(' ')[0],
+					label,
+				}))
+				this.mismatchPresented = []
 				this.$buefy.toast.open({ message: this.$t('Connection successful'), type: 'is-success' })
 			}
 			catch (err) {
 				this.isTesting = false
-				this.$buefy.toast.open({
-					message: err.response?.data?.message || err.message,
-					type: 'is-danger',
-				})
+				this.reportError(err)
 			}
+		},
+		// Keeps the real error visible, and turns a host key mismatch into the warning box above.
+		reportError(err) {
+			const data = err.response?.data
+			const text = [data?.message, typeof data?.data === 'string' ? data.data : '', err.message].join(' ')
+			if (/fingerprint mismatch|host key/i.test(text) && /mismatch/i.test(text)) {
+				const expected = this.hostKeyFingerprint.trim()
+				const presented = (text.match(/SHA256:[A-Za-z0-9+/=]+/g) || []).filter(fp => fp !== expected)
+				this.mismatchPresented = [...new Set(presented)]
+			}
+			this.$buefy.toast.open({
+				message: data?.message || err.message,
+				type: 'is-danger',
+			})
+		},
+		trustFingerprint(fp, replacing) {
+			const apply = () => {
+				this.hostKeyFingerprint = fp
+				this.mismatchPresented = []
+				if (!this.presentedFingerprints.some(item => item.value === fp)) {
+					this.presentedFingerprints = [{ value: fp, label: fp }, ...this.presentedFingerprints]
+				}
+			}
+			if (!replacing) {
+				apply()
+				return
+			}
+			this.$buefy.dialog.confirm({
+				title: this.$t('Trust the new key'),
+				message: this.$t('Replace the pinned fingerprint with the one the server presents now?'),
+				confirmText: this.$t('Trust the new key'),
+				cancelText: this.$t('Cancel'),
+				type: 'is-danger',
+				onConfirm: apply,
+			})
 		},
 		async submit() {
 			if (this.isEdit) {
@@ -214,10 +279,7 @@ export default {
 			}
 			catch (err) {
 				this.isConnecting = false
-				this.$buefy.toast.open({
-					message: err.response?.data?.message || err.message,
-					type: 'is-danger',
-				})
+				this.reportError(err)
 			}
 		},
 		async editConnection() {
@@ -247,10 +309,7 @@ export default {
 			}
 			catch (err) {
 				this.isConnecting = false
-				this.$buefy.toast.open({
-					message: err.response?.data?.message || err.message,
-					type: 'is-danger',
-				})
+				this.reportError(err)
 			}
 		},
 	},
@@ -260,5 +319,10 @@ export default {
 <style lang="scss" scoped>
 .modal-card {
 	max-width: 40rem;
+}
+
+.fingerprint {
+	word-break: break-all;
+	font-size: 0.75rem;
 }
 </style>

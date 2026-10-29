@@ -1,0 +1,197 @@
+/************************************
+*
+* Theme: dark mode and accent colour
+*
+* plugins/theme.js sets <html data-theme="light|dark"> and --accent. Light is the stock look, so only
+* the dark overrides live here, scoped to the surfaces that are white in the default theme (dialogs,
+* the file browser, forms, menus). The dashboard sits on the wallpaper and is already dark.
+*
+*************************************/
+
+:root {
+    --accent: #2074f3;
+}
+
+html[data-theme='dark'] {
+    --surface: #26282e;
+    --surface-2: #2f3238;
+    --surface-hover: #373a42;
+    --border: #3d4048;
+    --text: #e6e8eb;
+    --muted: #9aa0a8;
+    color-scheme: dark;
+
+    .modal-card,
+    .file-panel .modal-card,
+    .card,
+    .box,
+    .dropdown-content,
+    .popper,
+    .snackbar {
+        background-color: var(--surface) !important;
+        color: var(--text);
+    }
+
+    // Bulma gives the body/foot their own dark-grey text colour
+    .modal-card-body,
+    .modal-card-foot,
+    .modal-card-head {
+        color: var(--text);
+    }
+
+    .modal-card-head {
+        border-bottom-color: var(--border);
+    }
+
+    .modal-card-foot {
+        border-top-color: var(--border);
+    }
+
+    .title,
+    .subtitle,
+    .label,
+    strong,
+    b,
+    th,
+    .content h1, .content h2, .content h3, .content h4,
+    .dropdown-item,
+    .modal-card-title {
+        color: var(--text);
+    }
+
+    .has-text-grey,
+    .has-text-grey-light {
+        color: var(--muted) !important;
+    }
+
+    hr,
+    .dropdown-divider {
+        background-color: var(--border);
+    }
+
+    .input,
+    .textarea,
+    .select select,
+    .taginput .taginput-container.is-focusable,
+    .upload .button {
+        background-color: var(--surface-2);
+        border-color: var(--border);
+        color: var(--text);
+
+        &::placeholder {
+            color: var(--muted);
+        }
+    }
+
+    .button:not(.is-primary):not(.is-dark):not(.is-danger):not(.is-success):not(.is-info):not(.is-warning):not(.is-text):not(.is-white):not(.is-light) {
+        background-color: var(--surface-2);
+        border-color: var(--border);
+        color: var(--text);
+
+        &:hover {
+            background-color: var(--surface-hover);
+        }
+    }
+
+    // buttons that are black in the light theme would vanish on a dark surface
+    .button.is-dark {
+        background-color: #e6e8eb;
+        color: #1e1f24;
+    }
+
+    .dropdown-item:hover,
+    a.dropdown-item:hover {
+        background-color: var(--surface-hover);
+        color: var(--text);
+    }
+
+    .notification.is-light:not(.is-danger):not(.is-success):not(.is-warning):not(.is-info) {
+        background-color: var(--surface-2);
+        color: var(--text);
+    }
+
+    code {
+        background-color: var(--surface-2);
+        color: var(--text);
+    }
+
+    table {
+        background-color: transparent;
+        color: var(--text);
+    }
+
+    // file browser
+    .file-panel {
+        .nav-bar,
+        .tool-bar,
+        .modal-card-head {
+            background: var(--surface) !important;
+            color: var(--text);
+        }
+
+        .nav-bar {
+            border-right: 1px solid var(--border);
+        }
+
+        .modal-close-container-line:before {
+            border-left-color: var(--border);
+        }
+
+        // path above the list: the stock grey is unreadable on a dark surface
+        .breadcrumb ul li a {
+            color: var(--muted);
+
+            &:hover {
+                color: var(--text);
+                background-color: var(--surface-hover);
+            }
+        }
+
+        .breadcrumb ul li:last-child a {
+            color: var(--text);
+        }
+
+        // sidebar entries: light blue "active" and grey hover were made for white
+        .nav-bar .list-item {
+            color: var(--text);
+
+            &:hover {
+                background: var(--surface-hover);
+            }
+
+            &.active {
+                background: rgba(47, 107, 255, 0.28) !important;
+            }
+        }
+    }
+
+    .treemap-wrap .empty,
+    .folder-picker {
+        color: var(--text);
+    }
+}
+
+// accent colour for the primary actions - only when the user picked one (data-accent="custom"),
+// so the stock look is untouched otherwise
+html[data-accent='custom'] {
+    .button.is-primary,
+    .tag.is-primary,
+    .b-radio.button.is-primary.is-selected,
+    .b-radio.button.is-primary.is-selected:hover,
+    .progress.is-primary::-webkit-progress-value {
+        background-color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .progress.is-primary::-moz-progress-bar {
+        background-color: var(--accent);
+    }
+
+    .has-text-primary {
+        color: var(--accent) !important;
+    }
+
+    .switch input[type=checkbox]:checked + .check.is-primary {
+        background: var(--accent);
+    }
+}

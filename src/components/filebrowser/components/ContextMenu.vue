@@ -76,6 +76,11 @@
 						{{ $t('Set as wallpaper') }}
 					</b-dropdown-item>
 
+					<b-dropdown-item v-if="canShareLink" key="file-context-sharelink" aria-role="menuitem"
+						@click="shareLink">
+						{{ $t('Share link') }}
+					</b-dropdown-item>
+
 					<template v-if="item.is_dir">
 						<hr class="dropdown-divider">
 						<b-dropdown-item v-if="!isShared" aria-role="menuitem" @click="shareFoler">
@@ -149,6 +154,10 @@ export default {
 		},
 		isMounted() {
 			return this.item.extensions ? this.item.extensions.mounted : false;
+		},
+		// temporary public links are for one file at a time
+		canShareLink() {
+			return this.showSingleEdit && !this.item.is_dir && !this.isShared
 		}
 	},
 	watch: {
@@ -243,6 +252,11 @@ export default {
 					type: 'is-danger'
 				})
 			}
+		},
+
+		shareLink() {
+			this.$refs.dropDown.toggle()
+			this.filePanel.showShareLinkModal(this.item)
 		},
 
 		unShare() {

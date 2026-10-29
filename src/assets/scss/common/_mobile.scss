@@ -1,0 +1,47 @@
+/************************************
+*
+* Small screens: the dialogs added for storage, backups, sharing and settings use the full width
+* of a phone instead of a floating card, and respect the notch / home indicator when the UI is
+* installed as an app (viewport-fit=cover).
+*
+*************************************/
+
+@media screen and (max-width: 480px) {
+    .network-storage-modal,
+    .account-modal {
+        .modal-content,
+        .animation-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .modal-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 100dvh;
+            height: 100dvh;
+            border-radius: 0;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        // Buefy's horizontal fields keep label and input side by side, which is too narrow here
+        .field.is-horizontal {
+            display: block;
+
+            .field-label {
+                text-align: left;
+                margin-bottom: 0.4rem;
+            }
+        }
+    }
+}
+
+// installed app: keep content clear of the system bars
+@media (display-mode: standalone) {
+    #app {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+}

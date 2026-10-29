@@ -41,6 +41,13 @@ const folder = {
 		});
 	},
 
+	// sizes of the entries directly inside a folder (disk usage treemap)
+	getUsage(path) {
+		return api.get(`${PREFIX}/usage`, {
+			path: path
+		});
+	},
+
 	// count folder
 	getFolderCount(path) {
 		return api.get(`${PREFIX}/count`, {
