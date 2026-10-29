@@ -26,6 +26,12 @@
 			<b-field :label="$t('Remote folder')" class="mb-5" horizontal>
 				<b-input v-model="remotePath" :placeholder="$t('eg : / or /var')" expanded name="remotePath" />
 			</b-field>
+			<b-field :label="$t('Host key fingerprint')" class="mb-5" horizontal>
+				<b-input v-model="hostKeyFingerprint" :placeholder="$t('SHA256:... (optional)')" expanded name="hostKeyFingerprint" />
+			</b-field>
+			<p v-if="presentedFingerprints.length" class="is-size-7 mb-5">
+				{{ $t('Server host keys') }}: {{ presentedFingerprints.join(', ') }}
+			</p>
 
 			<b-field>
 				<b-radio-button v-model="authMode" native-value="password" type="is-primary">
@@ -89,6 +95,8 @@ export default {
 			port: this.editItem?.port || '22',
 			username: this.editItem?.username || '',
 			remotePath: this.editItem?.remote_path || '/',
+			hostKeyFingerprint: '',
+			presentedFingerprints: [],
 			authMode: 'password',
 			password: '',
 			keyFile: null,
@@ -148,6 +156,7 @@ export default {
 				port: this.port || '22',
 				username: this.username,
 				remote_path: this.remotePath || '/',
+				host_key_fingerprint: this.hostKeyFingerprint.trim(),
 			}
 
 			try {
@@ -157,8 +166,9 @@ export default {
 					this.isTesting = false
 					return
 				}
-				await this.$api.cloud.testSftp(data)
+				const res = await this.$api.cloud.testSftp(data)
 				this.isTesting = false
+				this.presentedFingerprints = res.data?.data?.host_key_fingerprints || []
 				this.$buefy.toast.open({ message: this.$t('Connection successful'), type: 'is-success' })
 			}
 			catch (err) {
@@ -190,6 +200,7 @@ export default {
 				port: this.port || '22',
 				username: this.username,
 				remote_path: this.remotePath || '/',
+				host_key_fingerprint: this.hostKeyFingerprint.trim(),
 			}
 
 			try {
@@ -223,6 +234,7 @@ export default {
 				port: this.port || '22',
 				username: this.username,
 				remote_path: this.remotePath || '/',
+				host_key_fingerprint: this.hostKeyFingerprint.trim(),
 			}
 
 			try {

@@ -113,6 +113,17 @@ export default {
 				this.configuring = !data.enabled
 			}).catch(() => {})
 		},
+		// The gateway redirects plain HTTP to HTTPS right after it is enabled, which would break every
+		// further API call from this page (cross-origin redirect), so move the browser there too.
+		redirectToHttps() {
+			if (window.location.protocol === 'https:') {
+				return
+			}
+			const port = this.status.port && this.status.port !== '443' ? ':' + this.status.port : ''
+			setTimeout(() => {
+				window.location.href = 'https://' + window.location.hostname + port + '/'
+			}, 1500)
+		},
 		clearError() {
 			this.errorType = ''
 			this.errors = ''
@@ -154,6 +165,7 @@ export default {
 				this.configuring = false
 				this.$buefy.toast.open({ message: this.$t('HTTPS enabled'), type: 'is-success' })
 				this.loadStatus()
+				this.redirectToHttps()
 			}).catch((err) => {
 				this.isLoading = false
 				this.errorType = 'is-danger'
@@ -177,6 +189,7 @@ export default {
 				this.configuring = false
 				this.$buefy.toast.open({ message: this.$t('HTTPS enabled'), type: 'is-success' })
 				this.loadStatus()
+				this.redirectToHttps()
 			}).catch((err) => {
 				this.isLoading = false
 				this.errorType = 'is-danger'
